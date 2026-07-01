@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gaya-backend
+    ports:
+      - "5050:5050"
+    environment:
+      - NODE_ENV=development
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - VTON_PROVIDER=${VTON_PROVIDER:-hf_space}
+      - HF_SPACE_URL=${HF_SPACE_URL:-https://yisol-idm-vton.hf.space}
+      - HF_SPACE_API_NAME=${HF_SPACE_API_NAME:-tryon}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - PORT=5050
+    volumes:
+      - backend_uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: gaya-web
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  android-builder:
+    build:
+      context: ./mobile
+      dockerfile: Dockerfile.android
+    container_name: gaya-android-builder
+    volumes:
+      - ./mobile:/app
+      - android_gradle:/root/.gradle
+      - android_sdk:/opt/android-sdk
+      - ./mobile/android/app/build/outputs:/output
+    environment:
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - API_BASE_URL=http://10.0.2.2:5050
+    profiles:
+      - build
+
+volumes:
+  backend_uploads:
+  android_gradle:
+  android_sdk:

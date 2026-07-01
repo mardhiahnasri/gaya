@@ -1,0 +1,48 @@
+# Android APK builder for Gaya
+# Usage: docker compose --profile build run android-builder
+# The signed APK will be in ./mobile/android/app/build/outputs/apk/
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools"
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    git \
+    openjdk-17-jdk \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20
+RUN npm install -g n && n 20 && hash -r
+
+# Install Android SDK command-line tools
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -O /tmp/cmdline-tools.zip && \
+    unzip -q /tmp/cmdline-tools.zip -d /tmp/ && \
+    mv /tmp/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest && \
+    rm /tmp/cmdline-tools.zip
+
+# Accept licenses and install SDK components
+RUN yes | sdkmanager --licenses && \
+    sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# Set API URL for Android emulator (10.0.2.2 = host machine in Android emulator)
+ENV API_BASE_URL=${API_BASE_URL:-http://10.0.2.2:3001}
+
+# Build the Android APK
+CMD ["sh", "-c", "cd android && ./gradlew assembleRelease --no-daemon"]
