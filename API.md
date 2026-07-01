@@ -1,0 +1,442 @@
+# Gaya API Documentation
+
+## Base URL
+```
+http://localhost:5050
+```
+
+## Authentication
+Currently no authentication required. In production, add API key validation.
+
+---
+
+## 📋 Endpoints
+
+### 1. Analyze Clothing
+Analyze a clothing item from a base64-encoded image using Gemini AI.
+
+**Endpoint:** `POST /api/analyze/clothing`
+
+**Request:**
+```json
+{
+  "base64": "iVBORw0KGgo...",
+  "mimeType": "image/jpeg"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "type": "Black Blazer",
+    "description": "Classic wool blazer, perfect for formal occasions",
+    "dominantColours": ["#000000", "#2F2F2F"],
+    "colourNames": ["Black", "Charcoal"],
+    "fabric": "Wool",
+    "style": "Formal",
+    "culturalOrigin": "Western",
+    "suitableOccasions": ["Work", "Formal Event", "Interview"],
+    "description": "A classic black wool blazer with a tailored fit"
+  }
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `400` - Invalid base64 or missing parameters
+- `500` - Server error (Gemini API issue)
+
+---
+
+### 2. Analyze Colors
+Check color compatibility and harmony.
+
+**Endpoint:** `POST /api/analyze/colours`
+
+**Request:**
+```json
+{
+  "colours": ["#000000", "#FFFFFF", "#2244D4"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "harmonyType": "Triadic",
+    "score": 8,
+    "verdict": "Excellent color combination with high contrast and visual interest",
+    "culturalNotes": "This combination works well across most cultural contexts",
+    "suggestedAccents": ["#FFD700", "#FF6B6B"]
+  }
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `400` - Invalid color format or insufficient colors
+- `500` - Server error
+
+---
+
+### 3. Get Outfit Suggestions
+Generate outfit suggestions for a specific occasion.
+
+**Endpoint:** `POST /api/suggest/outfits`
+
+**Request:**
+```json
+{
+  "wardrobeItems": [
+    {
+      "type": "Black Blazer",
+      "dominantColours": ["#000000"],
+      "colourNames": ["Black"],
+      "fabric": "Wool",
+      "style": "Formal",
+      "culturalOrigin": "Western",
+      "suitableOccasions": ["Work", "Formal"],
+      "description": "Classic black blazer"
+    },
+    {
+      "type": "White T-Shirt",
+      "dominantColours": ["#FFFFFF"],
+      "colourNames": ["White"],
+      "fabric": "Cotton",
+      "style": "Casual",
+      "culturalOrigin": "Western",
+      "suitableOccasions": ["Casual"],
+      "description": "Cotton tee"
+    }
+  ],
+  "occasion": "Job Interview",
+  "culturalContext": "Western"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "outfitName": "Professional Interview Look",
+      "items": [1, 2],
+      "colourHarmony": "Monochromatic - black and white create strong contrast",
+      "whyItWorks": "The black blazer conveys professionalism while the white shirt keeps it fresh and approachable",
+      "colourPalette": ["#000000", "#FFFFFF"],
+      "tips": "Add a silk tie or scarf for extra polish"
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `400` - Missing wardrobe items or occasion
+- `500` - Gemini API error
+
+---
+
+### 4. Get Wardrobe
+Fetch all saved wardrobe items.
+
+**Endpoint:** `GET /api/wardrobe`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "Black Blazer",
+      "dominantColours": ["#000000"],
+      "colourNames": ["Black"],
+      "fabric": "Wool",
+      "style": "Formal",
+      "culturalOrigin": "Western",
+      "suitableOccasions": ["Work", "Formal"],
+      "description": "Classic black blazer",
+      "imageUri": "data:image/jpeg;base64,...",
+      "addedAt": "2026-07-01T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `500` - Server error
+
+---
+
+### 5. Add to Wardrobe
+Save an analyzed clothing item to the wardrobe.
+
+**Endpoint:** `POST /api/wardrobe`
+
+**Request:**
+```json
+{
+  "analysis": {
+    "type": "Blue Jeans",
+    "dominantColours": ["#1F3A8A"],
+    "colourNames": ["Navy Blue"],
+    "fabric": "Denim",
+    "style": "Casual",
+    "culturalOrigin": "Western",
+    "suitableOccasions": ["Casual", "Weekend"],
+    "description": "Classic blue denim jeans"
+  },
+  "imageUri": "data:image/jpeg;base64,..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "type": "Blue Jeans",
+    "dominantColours": ["#1F3A8A"],
+    "colourNames": ["Navy Blue"],
+    "fabric": "Denim",
+    "style": "Casual",
+    "culturalOrigin": "Western",
+    "suitableOccasions": ["Casual", "Weekend"],
+    "description": "Classic blue denim jeans",
+    "imageUri": "data:image/jpeg;base64,...",
+    "addedAt": "2026-07-01T12:05:00.000Z"
+  }
+}
+```
+
+**Status Codes:**
+- `201` - Created successfully
+- `400` - Missing analysis object
+- `500` - Server error
+
+---
+
+### 6. Delete from Wardrobe
+Remove an item from the wardrobe.
+
+**Endpoint:** `DELETE /api/wardrobe/:id`
+
+**Example:**
+```
+DELETE /api/wardrobe/550e8400-e29b-41d4-a716-446655440000
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Item removed from wardrobe."
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `404` - Item not found
+- `500` - Server error
+
+---
+
+### 7. Virtual Try-On Preview
+Generate a virtual try-on preview using Hugging Face IDM-VTON.
+
+**Endpoint:** `POST /api/tryon/preview`
+
+**Request:**
+```json
+{
+  "personImage": {
+    "base64": "iVBORw0KGgo...",
+    "mimeType": "image/jpeg"
+  },
+  "garmentImages": [
+    {
+      "base64": "iVBORw0KGgo...",
+      "mimeType": "image/jpeg",
+      "category": "top",
+      "name": "Black Blazer"
+    }
+  ],
+  "fitNotes": "Make sure the blazer fits well with the dress"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "ready",
+    "provider": "huggingface",
+    "previewImageBase64": "iVBORw0KGgo...",
+    "previewImageUrl": "https://...",
+    "fitNotes": "The blazer fits well and complements the dress",
+    "warnings": []
+  }
+}
+```
+
+**Possible Status Values:**
+- `ready` - Preview generated successfully
+- `provider_unavailable` - Hugging Face service temporarily unavailable
+
+**Status Codes:**
+- `200` - Success
+- `400` - Invalid image data
+- `503` - Hugging Face service unavailable
+- `500` - Server error
+
+---
+
+## 🔍 Data Models
+
+### ClothingAnalysis
+```typescript
+interface ClothingAnalysis {
+  type: string;                    // e.g., "Black Blazer"
+  dominantColours: string[];       // Hex colors
+  colourNames: string[];           // Color names
+  fabric: string;                  // e.g., "Wool"
+  style: string;                   // e.g., "Formal"
+  culturalOrigin: string;          // e.g., "Western"
+  suitableOccasions: string[];     // e.g., ["Work", "Formal"]
+  description: string;             // Item description
+}
+```
+
+### WardrobeItem (ClothingAnalysis + metadata)
+```typescript
+interface WardrobeItem extends ClothingAnalysis {
+  id: string;                      // UUID
+  imageUri: string | null;         // Base64 or file path
+  addedAt: string;                 // ISO timestamp
+}
+```
+
+### OutfitSuggestion
+```typescript
+interface OutfitSuggestion {
+  outfitName: string;              // e.g., "Professional Interview Look"
+  items: number[];                 // Indices of wardrobe items used
+  colourHarmony: string;           // Description of color harmony
+  whyItWorks: string;              // Explanation
+  colourPalette: string[];         // Hex colors in outfit
+  tips: string;                    // Styling tips
+}
+```
+
+### ColourAnalysis
+```typescript
+interface ColourAnalysis {
+  harmonyType: string;             // e.g., "Triadic"
+  score: number;                   // 1-10
+  verdict: string;                 // Assessment
+  culturalNotes: string;           // Cultural context
+  suggestedAccents: string[];      // Accent color suggestions
+}
+```
+
+### VirtualTryOnResult
+```typescript
+interface VirtualTryOnResult {
+  status: 'ready' | 'provider_unavailable';
+  provider: string;                // e.g., "huggingface"
+  previewImageBase64?: string;     // Generated image
+  previewImageUrl?: string;        // URL if stored
+  fitNotes?: string;               // Fit assessment
+  warnings: string[];              // Any warnings
+}
+```
+
+---
+
+## 🔐 Error Handling
+
+All errors follow this format:
+
+```json
+{
+  "error": "Error message describing what went wrong"
+}
+```
+
+### Common Error Messages
+- `"analysis object is required."` - Missing analysis data
+- `"Item not found."` - Item ID doesn't exist
+- `"Invalid Gemini API key."` - API configuration error
+- `"Provider unavailable."` - Hugging Face service down
+
+---
+
+## 📊 Examples
+
+### Complete Workflow
+
+**1. Upload and Analyze Clothing:**
+```bash
+curl -X POST http://localhost:5050/api/analyze/clothing \
+  -H "Content-Type: application/json" \
+  -d '{
+    "base64": "iVBORw0KGgo...",
+    "mimeType": "image/jpeg"
+  }'
+```
+
+**2. Save to Wardrobe:**
+```bash
+curl -X POST http://localhost:5050/api/wardrobe \
+  -H "Content-Type: application/json" \
+  -d '{
+    "analysis": {
+      "type": "Black Blazer",
+      ...
+    },
+    "imageUri": "data:image/jpeg;base64,..."
+  }'
+```
+
+**3. Get Suggestions:**
+```bash
+curl -X POST http://localhost:5050/api/suggest/outfits \
+  -H "Content-Type: application/json" \
+  -d '{
+    "wardrobeItems": [...],
+    "occasion": "Job Interview",
+    "culturalContext": "Western"
+  }'
+```
+
+---
+
+## 🚀 Rate Limiting
+
+Currently no rate limiting implemented. For production:
+- Implement per-IP rate limiting (100 requests/minute)
+- Cache Gemini responses to reduce API costs
+- Queue virtual try-on requests
+
+---
+
+## 📝 Notes
+
+- All timestamps are in ISO 8601 format
+- Base64 images should be complete data URIs or raw base64
+- Color codes should be valid hex format (#RRGGBB)
+- Wardrobe is persisted in `backend/wardrobe.json`
+
+---
+
+**Last Updated**: July 2026
+**API Version**: 1.0
