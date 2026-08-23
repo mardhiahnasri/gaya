@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
+  Platform,
 } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -84,9 +85,11 @@ export function CameraScreen() {
 
         {/* Pick image buttons */}
         <View style={styles.row}>
-          <TouchableOpacity style={styles.btn} onPress={() => pickImage('camera')}>
-            <Text style={styles.btnText}>📷  Camera</Text>
-          </TouchableOpacity>
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity style={styles.btn} onPress={() => pickImage('camera')}>
+              <Text style={styles.btnText}>📷  Camera</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={[styles.btn, styles.btnSecondary]} onPress={() => pickImage('gallery')}>
             <Text style={styles.btnText}>🖼  Gallery</Text>
           </TouchableOpacity>

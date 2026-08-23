@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getWardrobe, deleteFromWardrobe } from '../services/api';
@@ -21,6 +22,7 @@ export function WardrobeScreen() {
   const navigation = useNavigation<Nav>();
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterText, setFilterText] = useState('');
 
   const loadWardrobe = useCallback(async () => {
     setLoading(true);
@@ -50,17 +52,39 @@ export function WardrobeScreen() {
     ]);
   };
 
+  const filteredItems = filterText.trim()
+    ? items.filter(
+        (i: WardrobeItem) =>
+          i.type.toLowerCase().includes(filterText.toLowerCase()) ||
+          i.culturalOrigin.toLowerCase().includes(filterText.toLowerCase()) ||
+          i.colourNames.some((c: string) => c.toLowerCase().includes(filterText.toLowerCase())),
+      )
+    : items;
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
         <View>
           <Text style={styles.kicker}>ARCHIVE</Text>
-          <Text style={styles.title}>Cher Closet</Text>
+          <Text style={styles.title}>My Wardrobe</Text>
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('Camera')}>
           <Text style={styles.addBtnText}>+ Add</Text>
         </TouchableOpacity>
       </View>
+
+      {!loading && items.length > 0 && (
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            value={filterText}
+            onChangeText={setFilterText}
+            placeholder="Search by type, colour, origin…"
+            placeholderTextColor="#555"
+            clearButtonMode="while-editing"
+          />
+        </View>
+      )}
 
       {loading ? (
         <ActivityIndicator color="#fbbf24" style={{ marginTop: 60 }} />
@@ -70,15 +94,23 @@ export function WardrobeScreen() {
           <Text style={styles.emptyText}>Your closet is empty</Text>
           <Text style={styles.emptySub}>Tap Add to capture your first statement piece</Text>
         </View>
+      ) : filteredItems.length === 0 && filterText.trim() ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyEmoji}>🔍</Text>
+          <Text style={styles.emptyText}>No items match "{filterText}"</Text>
+        </View>
       ) : (
         <FlatList
-          data={items}
+          data={filteredItems}
           keyExtractor={(item) => item.id}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onLongPress={() => handleDelete(item.id)}>
+            <View style={styles.card}>
+              <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+                <Text style={styles.deleteBtnText}>✕</Text>
+              </TouchableOpacity>
               {item.imageUri ? (
                 <Image source={{ uri: item.imageUri }} style={styles.cardImage} resizeMode="cover" />
               ) : (
@@ -95,11 +127,10 @@ export function WardrobeScreen() {
                 </View>
                 <Text style={styles.cardOrigin}>{item.culturalOrigin}</Text>
               </View>
-            </TouchableOpacity>
+            </View>
           )}
         />
       )}
-      <Text style={styles.hint}>Long press an item to remove it</Text>
     </View>
   );
 }
@@ -130,6 +161,18 @@ const styles = StyleSheet.create({
   cardImagePlaceholder: {
     width: '100%', height: 140, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#2244d4',
+  },
+  deleteBtn: {
+    position: 'absolute', top: 6, right: 6, zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)', width: 26, height: 26,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  deleteBtnText: { color: '#fbbf24', fontSize: 13, fontWeight: '900' },
+  searchRow: { paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#1a1a2e' },
+  searchInput: {
+    backgroundColor: '#2a2247', borderRadius: 0, color: '#f8fafc',
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 13,
+    borderWidth: 2, borderColor: '#2244d4',
   },
   cardBody: { padding: 10, backgroundColor: '#2a2247' },
   cardTitle: { color: '#f8fafc', fontWeight: '900', fontSize: 12, marginBottom: 6 },

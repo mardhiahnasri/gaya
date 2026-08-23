@@ -35,14 +35,14 @@ export function HomeScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#161329" />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>CHER'S WARDROBE</Text>
-          <Text style={styles.brand}>FALL FASHIONS</Text>
-          <Text style={styles.tagline}>Browse pieces. Build looks. Dress me.</Text>
+          <Text style={styles.kicker}>YOUR AI WARDROBE</Text>
+          <Text style={styles.brand}>GAYA</Text>
+          <Text style={styles.tagline}>Dress smart. Built for Malaysian style.</Text>
         </View>
 
         <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>Retro Closet Console</Text>
-          <Text style={styles.heroSub}>Pick one action and continue.</Text>
+          <Text style={styles.heroTitle}>What can I help you with?</Text>
+          <Text style={styles.heroSub}>Pick an action to get started.</Text>
         </View>
 
         <View style={styles.section}>
@@ -50,7 +50,7 @@ export function HomeScreen() {
             <Text style={styles.cardEmoji}>👕</Text>
             <View style={styles.cardText}>
               <Text style={styles.cardTitle}>Add Clothes</Text>
-              <Text style={styles.cardSub}>Upload item photo</Text>
+              <Text style={styles.cardSub}>Upload and analyse a clothing item</Text>
             </View>
             <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
@@ -62,7 +62,7 @@ export function HomeScreen() {
             <Text style={styles.cardEmoji}>✨</Text>
             <View style={styles.cardText}>
               <Text style={styles.cardTitle}>Get Outfit Ideas</Text>
-              <Text style={styles.cardSub}>Get suggestions for any occasion</Text>
+              <Text style={styles.cardSub}>AI suggestions for any occasion</Text>
             </View>
             <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
@@ -70,20 +70,19 @@ export function HomeScreen() {
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TryOn')}>
             <Text style={styles.cardEmoji}>🪞</Text>
             <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>Try On</Text>
-              <Text style={styles.cardSub}>Preview outfit on your photo</Text>
+              <Text style={styles.cardTitle}>Virtual Try-On</Text>
+              <Text style={styles.cardSub}>Preview clothing on your photo</Text>
             </View>
             <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.footerLinks}>
-          <TouchableOpacity onPress={() => navigation.navigate('Colour')}>
-            <Text style={styles.footerLink}>Check Colors</Text>
-          </TouchableOpacity>
-          <Text style={styles.footerLinkDivider}>•</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Wardrobe')}>
-            <Text style={styles.footerLink}>My Wardrobe</Text>
+          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Colour')}>
+            <Text style={styles.cardEmoji}>🎨</Text>
+            <View style={styles.cardText}>
+              <Text style={styles.cardTitle}>Check Colours</Text>
+              <Text style={styles.cardSub}>Analyse colour harmony and compatibility</Text>
+            </View>
+            <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -199,27 +198,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 15, fontWeight: '900', color: '#f8fafc' },
   cardSub: { fontSize: 11, color: '#b5c5ff', marginTop: 3 },
   arrow: { fontSize: 18, color: '#fbbf24', fontWeight: '900' },
-  footerLinks: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 2,
-    borderTopColor: '#2244d4',
-  },
-  footerLink: {
-    color: '#fbbf24',
-    fontSize: 11,
-    textDecorationLine: 'underline',
-    fontWeight: '700',
-  },
-  footerLinkDivider: {
-    color: '#2244d4',
-    fontSize: 14,
-    fontWeight: '900',
-  },
+
   /* Modal Styles */
   modalOverlay: {
     flex: 1,

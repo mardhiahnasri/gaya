@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { analyseColours } from '../services/api';
@@ -27,6 +28,7 @@ export function ColourScreen() {
   const [inputValue, setInputValue] = useState('');
   const [analysis, setAnalysis] = useState<ColourAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
+  const colorInputRef = useRef<any>(null);
 
   const addColour = () => {
     const hex = inputValue.trim().toUpperCase();
@@ -38,6 +40,14 @@ export function ColourScreen() {
     setColours((prev) => [...prev, hex]);
     setInputValue('');
     setAnalysis(null);
+  };
+
+  const addColourFromPicker = (hex: string) => {
+    const upper = hex.toUpperCase();
+    if (!colours.includes(upper)) {
+      setColours((prev) => [...prev, upper]);
+      setAnalysis(null);
+    }
   };
 
   const removeColour = (hex: string) => {
@@ -102,7 +112,21 @@ export function ColourScreen() {
           <TouchableOpacity style={styles.addBtn} onPress={addColour}>
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
+          {Platform.OS === 'web' && (
+            <TouchableOpacity style={styles.pickerBtn} onPress={() => colorInputRef.current?.click()}>
+              <Text style={styles.pickerBtnText}>🎨</Text>
+            </TouchableOpacity>
+          )}
         </View>
+        {Platform.OS === 'web' && (
+          // @ts-ignore — HTML input rendered via RN Web
+          <input
+            ref={colorInputRef}
+            type="color"
+            style={{ display: 'none' }}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => addColourFromPicker(e.target.value)}
+          />
+        )}
 
         {/* Preset palettes */}
         <Text style={styles.sectionHeader}>Cultural Presets</Text>
@@ -186,6 +210,8 @@ const styles = StyleSheet.create({
   },
   addBtn: { backgroundColor: '#2244d4', borderRadius: 0, paddingHorizontal: 16, justifyContent: 'center', borderWidth: 2, borderColor: '#fbbf24' },
   addBtnText: { color: '#f8fafc', fontWeight: '900', fontSize: 13 },
+  pickerBtn: { backgroundColor: '#2d1b4e', borderRadius: 0, paddingHorizontal: 14, justifyContent: 'center', borderWidth: 2, borderColor: '#2244d4' },
+  pickerBtnText: { fontSize: 18 },
   sectionHeader: { fontSize: 10, color: '#fbbf24', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12, marginTop: 4, fontWeight: '900' },
   presetScroll: { marginBottom: 20 },
   presetCard: {
