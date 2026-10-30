@@ -7,6 +7,7 @@ const analyzeRoutes = require('./routes/analyze');
 const suggestRoutes = require('./routes/suggest');
 const wardrobeRoutes = require('./routes/wardrobe');
 const tryOnRoutes = require('./routes/tryon');
+const outfitRoutes = require('./routes/outfits');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -36,6 +37,7 @@ app.use('/api/analyze', analyzeRoutes);
 app.use('/api/suggest', suggestRoutes);
 app.use('/api/wardrobe', wardrobeRoutes);
 app.use('/api/tryon', tryOnRoutes);
+app.use('/api/outfits', outfitRoutes);
 
 // 404 handler
 app.use((_req, res) => {

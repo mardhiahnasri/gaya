@@ -296,4 +296,76 @@ async function generateWithHuggingFaceSpace({ personImage, garmentImages, fitNot
   };
 }
 
-module.exports = { generateVirtualTryOnPreview };
+async function downloadImage(url) {
+  const baseUrl = (process.env.HF_SPACE_URL || 'https://yisol-idm-vton.hf.space').replace(/\/$/, '');
+  const headers = url.startsWith(baseUrl) ? getHfAuthHeaders() : {};
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw Object.assign(new Error(`Could not download try-on result (${response.status}).`), { statusCode: 502 });
+  }
+  const buffer = Buffer.from(await response.arrayBuffer());
+  return {
+    base64: buffer.toString('base64'),
+    mimeType: response.headers.get('content-type') || 'image/jpeg',
+  };
+}
+
+// The free IDM-VTON Space only masks the upper body, so it can dress tops, outerwear and
+// one-piece garments, but not bottoms. Garments are applied in layering order.
+const RENDER_ORDER = ['dress', 'top', 'outerwear'];
+
+/**
+ * Renders a multi-piece outfit by chaining single-garment passes, feeding each result back in.
+ */
+async function renderOutfitPreview({ personImage, garments, fitNotes }) {
+  let current = assertImageShape(personImage, 'personImage');
+  if (!Array.isArray(garments) || garments.length === 0) {
+    throw Object.assign(new Error('garments must be a non-empty array.'), { statusCode: 400 });
+  }
+
+  const warnings = [];
+  const renderable = [];
+  for (const category of RENDER_ORDER) {
+    renderable.push(...garments.filter((g) => g.category === category));
+  }
+  const skipped = garments.filter((g) => !RENDER_ORDER.includes(g.category));
+  for (const g of skipped) {
+    const label = g.name || g.category;
+    warnings.push(
+      g.category === 'bottom'
+        ? `${label} (bottom) cannot be rendered by the free try-on model; your own lower body is shown.`
+        : `${label} (${g.category}) is part of the outfit but is not rendered.`
+    );
+  }
+  if (renderable.length === 0) {
+    throw Object.assign(new Error('This outfit has no top, dress or outerwear that can be rendered.'), { statusCode: 400 });
+  }
+
+  // A dress replaces the top, so don't render both.
+  const hasDress = renderable.some((g) => g.category === 'dress');
+  const passes = hasDress ? renderable.filter((g) => g.category !== 'top') : renderable;
+
+  for (const garment of passes) {
+    const result = await generateVirtualTryOnPreview({
+      personImage: current,
+      garmentImages: [garment],
+      fitNotes,
+    });
+    if (result.status !== 'ready') return { ...result, warnings: [...warnings, ...(result.warnings || [])] };
+
+    if (result.previewImageBase64) {
+      current = { base64: result.previewImageBase64, mimeType: 'image/jpeg' };
+    } else if (result.previewImageUrl) {
+      current = await downloadImage(result.previewImageUrl);
+    }
+  }
+
+  return {
+    status: 'ready',
+    provider: 'hf_space:chained',
+    previewImageBase64: current.base64,
+    warnings: [...warnings, 'Using free public Space. Queue delays, rate limits, and downtime are expected.'],
+  };
+}
+
+module.exports = { generateVirtualTryOnPreview, renderOutfitPreview };

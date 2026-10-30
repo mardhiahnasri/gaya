@@ -1,7 +1,7 @@
 # Gaya 👗✨ 
 ### Your Retro AI-Powered Wardrobe Assistant
 
-A stylish, retro 90s-inspired web and mobile app for managing your wardrobe, getting AI-powered outfit suggestions, and virtually trying on clothes using Gemini AI and computer vision.
+A stylish, retro 90s-inspired web and mobile app for managing your wardrobe, getting AI-powered outfit suggestions, and virtually trying on clothes using AI and computer vision.
 
 ![Retro Design](https://img.shields.io/badge/Design-Retro%2090s-fbbf24?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-2244d4?style=flat-square)
@@ -11,14 +11,14 @@ A stylish, retro 90s-inspired web and mobile app for managing your wardrobe, get
 
 ## 🎨 Features
 
-- **📸 Smart Clothing Analysis** - Upload a photo of any clothing item, Gemini AI analyzes it and extracts:
+- **📸 Smart Clothing Analysis** - Upload a photo of any clothing item, AI analyzes it and extracts:
   - Clothing type and description
   - Dominant colors with names
   - Fabric type and style
   - Cultural origin and suitability occasions
   
 - **✨ AI Outfit Suggestions** - Get personalized outfit recommendations for any occasion with:
-  - Gemini AI-powered styling suggestions
+  - AI-powered styling suggestions
   - Color harmony analysis
   - Styling tips and tricks
   - Occasion and cultural context awareness
@@ -44,12 +44,12 @@ gaya/
 ├── backend/           # Node.js/Express API
 │   ├── src/
 │   │   ├── routes/
-│   │   │   ├── analyze.js      # Clothing analysis with Gemini
+│   │   │   ├── analyze.js      # Clothing analysis with AI
 │   │   │   ├── suggest.js      # Outfit suggestions
 │   │   │   ├── tryon.js        # Virtual try-on
 │   │   │   └── wardrobe.js     # Wardrobe CRUD
 │   │   ├── services/
-│   │   │   ├── gemini.js       # Gemini API integration
+│   │   │   ├── aiModel.js      # AI provider (Gemini / local Ollama)
 │   │   │   └── virtualTryOn.js # Hugging Face integration
 │   │   └── index.js
 │   └── Dockerfile
@@ -85,7 +85,7 @@ gaya/
 ### Backend
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **AI**: Google Gemini API
+- **AI**: Google Gemini API or a local Ollama model (set `AI_PROVIDER`)
 - **Computer Vision**: Hugging Face IDM-VTON (virtual try-on)
 - **Storage**: JSON file persistence (wardrobe.json)
 
@@ -109,7 +109,7 @@ gaya/
 ### Prerequisites
 - Docker & Docker Compose
 - Node.js 18+ (for local development without Docker)
-- Google Gemini API key
+- Google Gemini API key (or a local Ollama model, see local-ai/)
 - (Optional) Hugging Face token for virtual try-on
 
 ### 1. Environment Setup
@@ -154,7 +154,7 @@ npm run dev
 ### 1. **Add Clothing** 👕
 - Navigate to "Add Clothes" tab
 - Take photo or upload from gallery
-- Gemini AI analyzes the item
+- AI analyzes the item
 - **Automatically saved** to your wardrobe
 - Choose "Continue Shopping" or "Go to Wardrobe"
 
@@ -284,7 +284,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙌 Acknowledgments
 
-- **Gemini API** for AI clothing analysis and outfit suggestions
+- **Gemini API or local Ollama** for AI clothing analysis and outfit suggestions
 - **Hugging Face** for the IDM-VTON virtual try-on model
 - **React Native** community for cross-platform components
 - Inspired by 90s fashion and Cher Horowitz's iconic closet scene

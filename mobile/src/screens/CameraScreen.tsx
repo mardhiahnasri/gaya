@@ -100,7 +100,7 @@ export function CameraScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.analyzeBtnText}>✦ Analyse with Gemini AI</Text>
+              <Text style={styles.analyzeBtnText}>✦ Analyse with AI</Text>
             )}
           </TouchableOpacity>
         )}

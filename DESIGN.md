@@ -177,7 +177,7 @@ Secondary Text:       #b5c5ff  (Bright Indigo)
 │ └─────────────┴─────────────┘  │
 │                                 │
 │ ┌───────────────────────────────┐ │
-│ │ ✦ Analyse with Gemini AI     │ │  Analyze button
+│ │ ✦ Analyse with AI     │ │  Analyze button
 │ └───────────────────────────────┘ │  (Auto-saves after)
 │                                 │
 │ ✓ Black Blazer                  │

@@ -11,6 +11,9 @@ services:
     environment:
       - NODE_ENV=development
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OLLAMA_URL=${OLLAMA_URL}
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
       - VTON_PROVIDER=${VTON_PROVIDER:-hf_space}
       - HF_SPACE_URL=${HF_SPACE_URL:-https://yisol-idm-vton.hf.space}
       - HF_SPACE_API_NAME=${HF_SPACE_API_NAME:-tryon}

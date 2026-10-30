@@ -3,12 +3,23 @@ import { API_BASE_URL } from '../constants/config';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 300000, // local AI models can take minutes on CPU
   headers: { 'Content-Type': 'application/json' },
 });
 
+export type Category = 'top' | 'bottom' | 'dress' | 'outerwear' | 'hijab' | 'shoes' | 'accessory';
+export type StyleProfile = 'hijab' | 'modest' | 'none';
+
 export interface ClothingAnalysis {
   type: string;
+  category?: Category;
+  pattern?: string;
+  formality?: string;
+  sleeves?: string;
+  length?: string;
+  fit?: string;
+  neckline?: string;
+  sheer?: boolean;
   dominantColours: string[];
   colourNames: string[];
   fabric: string;
@@ -128,5 +139,68 @@ export async function generateVirtualTryOnPreview(
     garmentImages,
     fitNotes,
   });
+  return data.data;
+}
+
+export interface OutfitCheck {
+  id: string;
+  label: string;
+  status: 'pass' | 'warn' | 'fail';
+  detail: string;
+}
+
+export interface OutfitScore {
+  score: number;
+  checks: OutfitCheck[];
+}
+
+export interface MatchedOutfit extends OutfitScore {
+  itemIds: string[];
+}
+
+export interface OutfitReview {
+  score: number;
+  verdict: string;
+  strengths: string[];
+  issues: string[];
+  swaps: string[];
+}
+
+export interface OutfitRender {
+  status: 'ready' | 'provider_unavailable';
+  previewImageBase64?: string;
+  fitNotes?: string;
+  warnings: string[];
+}
+
+const LONG_TIMEOUT = { timeout: 900000 };
+
+export async function updateWardrobeItem(id: string, patch: Partial<WardrobeItem>): Promise<WardrobeItem> {
+  const { data } = await api.patch(`/api/wardrobe/${id}`, patch);
+  return data.data;
+}
+
+export async function matchOutfits(occasion: string, profile: StyleProfile): Promise<MatchedOutfit[]> {
+  const { data } = await api.post('/api/outfits/match', { occasion, profile });
+  return data.data;
+}
+
+export async function scoreOutfit(itemIds: string[], occasion: string, profile: StyleProfile): Promise<OutfitScore> {
+  const { data } = await api.post('/api/outfits/score', { itemIds, occasion, profile });
+  return data.data;
+}
+
+export async function renderOutfit(personImage: TryOnImageInput, itemIds: string[], fitNotes?: string): Promise<OutfitRender> {
+  const { data } = await api.post('/api/outfits/render', { personImage, itemIds, fitNotes }, LONG_TIMEOUT);
+  return data.data;
+}
+
+export async function reviewOutfit(
+  image: TryOnImageInput,
+  itemIds: string[],
+  occasion: string,
+  profile: StyleProfile
+): Promise<OutfitReview> {
+  const { data } = await api.post('/api/outfits/review', { image, itemIds, occasion, profile }, LONG_TIMEOUT);
   return data.data;
 }

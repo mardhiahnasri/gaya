@@ -13,7 +13,7 @@ Currently no authentication required. In production, add API key validation.
 ## 📋 Endpoints
 
 ### 1. Analyze Clothing
-Analyze a clothing item from a base64-encoded image using Gemini AI.
+Analyze a clothing item from a base64-encoded image using the configured AI model.
 
 **Endpoint:** `POST /api/analyze/clothing`
 
@@ -46,7 +46,7 @@ Analyze a clothing item from a base64-encoded image using Gemini AI.
 **Status Codes:**
 - `200` - Success
 - `400` - Invalid base64 or missing parameters
-- `500` - Server error (Gemini API issue)
+- `500` - Server error (AI provider issue)
 
 ---
 
@@ -138,7 +138,7 @@ Generate outfit suggestions for a specific occasion.
 **Status Codes:**
 - `200` - Success
 - `400` - Missing wardrobe items or occasion
-- `500` - Gemini API error
+- `500` - AI provider error
 
 ---
 
@@ -375,7 +375,7 @@ All errors follow this format:
 ### Common Error Messages
 - `"analysis object is required."` - Missing analysis data
 - `"Item not found."` - Item ID doesn't exist
-- `"Invalid Gemini API key."` - API configuration error
+- `"Invalid AI API key."` - API configuration error
 - `"Provider unavailable."` - Hugging Face service down
 
 ---
@@ -424,7 +424,7 @@ curl -X POST http://localhost:5050/api/suggest/outfits \
 
 Currently no rate limiting implemented. For production:
 - Implement per-IP rate limiting (100 requests/minute)
-- Cache Gemini responses to reduce API costs
+- Cache AI responses to reduce API costs
 - Queue virtual try-on requests
 
 ---
@@ -440,3 +440,16 @@ Currently no rate limiting implemented. For production:
 
 **Last Updated**: July 2026
 **API Version**: 1.0
+
+
+---
+
+## Outfit matching (web studio)
+
+All endpoints take `profile`: `hijab` | `modest` | `none`, and `occasion`: an id from the web app's occasion list (e.g. `hari_raya`, `formal_work`).
+
+- `POST /api/outfits/match` `{ occasion, profile, limit? }` returns ranked outfits `[{ itemIds, score, checks }]` built from the saved wardrobe using rule-based fashion checks (completeness, colour harmony, patterns, modest coverage, hijab pairing, occasion fit).
+- `POST /api/outfits/score` `{ itemIds, occasion, profile }` returns `{ score, checks }` for a chosen outfit.
+- `POST /api/outfits/render` `{ personImage: { base64, mimeType }, itemIds }` renders the outfit on a body photo by chaining try-on passes (dress or top, then outerwear). Bottoms and hijabs are not rendered by the free model and come back as warnings.
+- `POST /api/outfits/review` `{ image: { base64, mimeType }, itemIds, occasion, profile }` returns a stylist review `{ score, verdict, strengths, issues, swaps }` from the vision model.
+- `PATCH /api/wardrobe/:id` corrects detected fields such as `category`, `sleeves`, `length`, `fit`.

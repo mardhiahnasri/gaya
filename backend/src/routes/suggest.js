@@ -1,5 +1,5 @@
 const express = require('express');
-const { suggestOutfits } = require('../services/gemini');
+const { suggestOutfits } = require('../services/aiModel');
 
 const router = express.Router();
 

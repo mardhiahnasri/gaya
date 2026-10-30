@@ -1,7 +1,7 @@
 {
   "name": "gaya-backend",
   "version": "1.0.0",
-  "description": "Gaya AI outfit stylist backend — powered by Google Gemini Vision",
+  "description": "Gaya AI outfit stylist backend — powered by Gemini or a local Ollama vision model",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

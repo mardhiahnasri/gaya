@@ -1,0 +1,33 @@
+version: "3.9"
+
+# Local AI server (Ollama) for Gaya. Run separately from the main stack:
+#   cd local-ai && docker compose up -d
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gaya-ollama
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # One-shot job: downloads the vision model once, then exits.
+  model-pull:
+    image: ollama/ollama:latest
+    container_name: gaya-ollama-pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-qwen2.5vl:7b}"]
+    restart: "no"
+
+volumes:
+  ollama_models:

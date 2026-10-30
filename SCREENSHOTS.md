@@ -135,7 +135,7 @@ FOOTER LINKS (Amber text, centered):
 │ └────────────────┴────────────────┘
 │                                 │
 │ ┌──────────────────────────────┐ │
-│ │ ✦ Analyse with Gemini AI     │ │ ← Analyze button
+│ │ ✦ Analyse with AI     │ │ ← Analyze button
 │ │ (shown only when image ready)│ │    (Disabled until image)
 │ └──────────────────────────────┘ │
 │                                 │
@@ -568,7 +568,7 @@ Button height:           44-52px minimum
 1. User taps "Add Clothes" card from home
 2. Navigates to Camera Screen
 3. Takes photo or uploads from gallery
-4. Taps "Analyse with Gemini AI"
+4. Taps "Analyse with AI"
 5. AI analyzes and displays results
 6. **Auto-saves** to wardrobe
 7. Success alert appears with options

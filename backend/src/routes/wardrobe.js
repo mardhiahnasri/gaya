@@ -52,6 +52,27 @@ router.post('/', (req, res) => {
   res.status(201).json({ success: true, data: item });
 });
 
+const EDITABLE_FIELDS = [
+  'type', 'category', 'pattern', 'formality', 'sleeves', 'length', 'fit', 'neckline', 'sheer',
+  'style', 'fabric', 'culturalOrigin', 'suitableOccasions',
+];
+
+/**
+ * PATCH /api/wardrobe/:id
+ * Correct AI-detected details (e.g. category, sleeve length) on a saved item.
+ */
+router.patch('/:id', (req, res) => {
+  const item = wardrobe.find((i) => i.id === req.params.id);
+  if (!item) {
+    return res.status(404).json({ error: 'Item not found.' });
+  }
+  for (const key of EDITABLE_FIELDS) {
+    if (key in req.body) item[key] = req.body[key];
+  }
+  saveWardrobe(wardrobe);
+  res.json({ success: true, data: item });
+});
+
 /**
  * DELETE /api/wardrobe/:id
  */
@@ -67,3 +88,4 @@ router.delete('/:id', (req, res) => {
 });
 
 module.exports = router;
+module.exports.getWardrobe = () => wardrobe;

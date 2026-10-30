@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { analyzeClothingItem } = require('../services/gemini');
+const { analyzeClothingItem } = require('../services/aiModel');
 
 const router = express.Router();
 
@@ -52,7 +52,7 @@ router.post('/colours', async (req, res) => {
     if (!Array.isArray(colours) || colours.length < 2) {
       return res.status(400).json({ error: 'Provide at least 2 hex colour codes in "colours" array.' });
     }
-    const { analyseColours } = require('../services/gemini');
+    const { analyseColours } = require('../services/aiModel');
     const result = await analyseColours(colours);
     res.json({ success: true, data: result });
   } catch (err) {
