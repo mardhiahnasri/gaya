@@ -1,305 +1,107 @@
-# Gaya 👗✨ 
-### Your Retro AI-Powered Wardrobe Assistant
+# Gaya 👗
 
-A stylish, retro 90s-inspired web and mobile app for managing your wardrobe, getting AI-powered outfit suggestions, and virtually trying on clothes using AI and computer vision.
+An AI wardrobe app. Upload the clothes you own, mix and match them into outfits that follow fashion rules (including hijab and modest dressing), and see any outfit on your own body.
 
-![Retro Design](https://img.shields.io/badge/Design-Retro%2090s-fbbf24?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active%20Development-2244d4?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+## Features
 
----
+- **Virtual try-on from any image.** Upload a photo or screenshot, or paste a Pinterest or image link, and see it on your saved body photo. A stylist review follows.
+- **Mix and match your closet.** Upload your clothes (one at a time or in bulk). The AI tags each piece (category, colours, sleeves, length, fabric, occasions). Auto-match builds outfits from your own wardrobe and scores them with fashion rules.
+- **Profile.** Body photo, height, weight, top/bottom/shoe size, body shape, age group, gender, modesty (none, modest, hijab), region and budget. It drives try-on, size-fit warnings and outfit scoring.
+- **Colour check.** Palette harmony analysis with cultural presets. A personal colour-season analysis (by skin tone, photo or questions) is planned.
+- **Local AI.** Runs on a local Ollama vision model, so no paid API is needed. Gemini is still supported.
 
-## 🎨 Features
+The full list with status and what is planned is in [FEATURES.md](FEATURES.md).
 
-- **📸 Smart Clothing Analysis** - Upload a photo of any clothing item, AI analyzes it and extracts:
-  - Clothing type and description
-  - Dominant colors with names
-  - Fabric type and style
-  - Cultural origin and suitability occasions
-  
-- **✨ AI Outfit Suggestions** - Get personalized outfit recommendations for any occasion with:
-  - AI-powered styling suggestions
-  - Color harmony analysis
-  - Styling tips and tricks
-  - Occasion and cultural context awareness
-  
-- **🪞 Virtual Try-On** - Preview outfits on your photo using Hugging Face's IDM-VTON model
-
-- **🎭 Color Analysis** - Check color compatibility and harmony for your wardrobe
-
-- **💾 Persistent Wardrobe** - Save all your clothing items and access them anytime
-
-- **🌈 Retro UI Design** - Bold, geometric 90s Cher closet aesthetic with:
-  - Square corners everywhere
-  - 2-3px cobalt borders
-  - Heavy 900-weight typography
-  - Bright color palette: `#1a1a2e`, `#2244d4`, `#fbbf24`, `#b5c5ff`
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```
 gaya/
-├── backend/           # Node.js/Express API
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── analyze.js      # Clothing analysis with AI
-│   │   │   ├── suggest.js      # Outfit suggestions
-│   │   │   ├── tryon.js        # Virtual try-on
-│   │   │   └── wardrobe.js     # Wardrobe CRUD
-│   │   ├── services/
-│   │   │   ├── aiModel.js      # AI provider (Gemini / local Ollama)
-│   │   │   └── virtualTryOn.js # Hugging Face integration
-│   │   └── index.js
-│   └── Dockerfile
-│
-├── web/              # React Native Web + Vite
-│   ├── src/
-│   │   ├── screens/
-│   │   │   ├── HomeScreen.tsx          # Home with occasion picker modal
-│   │   │   ├── CameraScreen.tsx        # Auto-save clothing items
-│   │   │   ├── WardrobeScreen.tsx      # View saved items (2-column grid)
-│   │   │   ├── OccasionScreen.tsx      # Pick occasion & cultural context
-│   │   │   ├── SuggestionScreen.tsx    # AI outfit suggestions + empty state
-│   │   │   ├── ColourScreen.tsx        # Color harmony analysis
-│   │   │   └── TryOnScreen.tsx         # Virtual try-on preview
-│   │   ├── navigation/AppNavigator.tsx # Bottom tab navigator
-│   │   ├── services/api.ts             # Axios API client
-│   │   └── constants/config.ts         # Config & occasion data
-│   └── Dockerfile
-│
-├── mobile/           # React Native (iOS/Android compatible)
-│   ├── src/          # (Same structure as web)
-│   ├── Dockerfile.android
-│   └── ios/
-│
-├── docker-compose.yml
-└── README.md
+├── backend/        Node.js / Express API
+│   └── src/
+│       ├── routes/     analyze, suggest, wardrobe, profile, outfits, tryon, images
+│       └── services/   aiModel (Ollama/Gemini), outfitRules, virtualTryOn,
+│                       db (Postgres), storage (S3), remoteImage, tryonStore
+├── web/            React + Vite (sidebar app)
+├── mobile/         React Native (bottom tabs)
+├── database/       PostgreSQL + LocalStack S3 (docker compose)
+├── local-ai/       Ollama vision model (docker compose)
+└── docker-compose.yml   backend + web
 ```
 
----
+| Part | Tech |
+|---|---|
+| AI | Ollama `qwen2.5vl:7b` (default) or Google Gemini, set with `AI_PROVIDER` |
+| Try-on | Hugging Face IDM-VTON Space (free, upper body only) |
+| Data | PostgreSQL 16 |
+| Images | S3 API via LocalStack (swap for real S3 by changing `S3_ENDPOINT`) |
+| Web | React, Vite, TypeScript |
+| Mobile | React Native, React Navigation, TypeScript |
 
-## 🛠️ Tech Stack
+## Quick start
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **AI**: Google Gemini API or a local Ollama model (set `AI_PROVIDER`)
-- **Computer Vision**: Hugging Face IDM-VTON (virtual try-on)
-- **Storage**: JSON file persistence (wardrobe.json)
+Prerequisites: Docker, and Node 20+ if you run things outside Docker.
 
-### Frontend
-- **Framework**: React Native Web
-- **Build Tool**: Vite
-- **Navigation**: React Navigation
-- **Styling**: React Native StyleSheet
-- **Language**: TypeScript
-- **HTTP**: Axios
+**1. Database and image storage**
+```bash
+cd database
+cp .env.example .env     # set POSTGRES_PASSWORD
+docker compose up -d
+```
 
-### Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **API Port**: 5050 (backend)
-- **Web Port**: 5173 (Vite dev server)
+**2. Local AI model** (downloads about 6 GB on first run)
+```bash
+cd local-ai
+docker compose up -d
+```
+Docker on Apple Silicon is CPU-only and slow (about 40 to 60 s per image). For GPU speed on a Mac, run native Ollama instead and point `OLLAMA_URL` at it. See [local-ai/README.md](local-ai/README.md).
 
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local development without Docker)
-- Google Gemini API key (or a local Ollama model, see local-ai/)
-- (Optional) Hugging Face token for virtual try-on
-
-### 1. Environment Setup
+**3. App**
 ```bash
 cp .env.example .env
 ```
+Edit `.env`:
+- `AI_PROVIDER=ollama` (or `gemini` with `GEMINI_API_KEY`)
+- `OLLAMA_URL` (`http://host.docker.internal:11435` for the Docker Ollama above)
+- `DATABASE_URL`: the password must match `database/.env`
+- `HF_TOKEN`: optional, a Hugging Face read token for the try-on Space
 
-Edit `.env` with your credentials:
 ```bash
-GEMINI_API_KEY=your_gemini_api_key_here
-HF_TOKEN=your_huggingface_token_optional
+docker compose up -d --build
 ```
+- Web: http://localhost:5173
+- API: http://localhost:5050 (`/health`)
 
-### 2. Start with Docker
-```bash
-docker compose up --build
-```
+Start the database before the backend. Without Docker, run `npm install && npm run dev` in `backend/` and `web/`, with `localhost` in place of `host.docker.internal` in `.env`.
 
-- **Backend**: http://localhost:5050
-- **Frontend**: http://localhost:5173
+**Mobile**: `cd mobile && npm install`. It uses the same API; set `API_BASE_URL` in `mobile/src/constants/config.ts` (`http://10.0.2.2:5050` for the Android emulator, or your Mac's LAN IP for a real phone).
 
-### 3. Or Run Locally
+## How to use
 
-**Backend:**
-```bash
-cd backend
-npm install
-GEMINI_API_KEY=your_key node src/index.js
-```
+1. **Profile**: add your body photo, sizes and modesty setting.
+2. **Wardrobe**: add clothes with a clear photo of one item (or use bulk upload on web). Check the category and size on each card and fix them if needed.
+3. **Outfit studio**: pick an occasion, auto-match or choose pieces yourself, check the fashion score, then try the outfit on and get a stylist review.
+4. **Try on**: try any outfit image or link on your body.
+5. **Colour check**: test a palette.
 
-**Frontend:**
-```bash
-cd web
-npm install
-npm run dev
-```
+## API
 
----
+See [API.md](API.md). Main groups: `/api/profile`, `/api/wardrobe`, `/api/outfits` (match, score, render, review), `/api/tryon` (preview, from-image, review), `/api/analyze`, `/api/suggest`, `/api/images/:id`.
 
-## 📱 Usage
+## Limits to know about
 
-### 1. **Add Clothing** 👕
-- Navigate to "Add Clothes" tab
-- Take photo or upload from gallery
-- AI analyzes the item
-- **Automatically saved** to your wardrobe
-- Choose "Continue Shopping" or "Go to Wardrobe"
+- The free try-on Space only dresses the upper body (tops, dresses, outerwear). Bottoms and hijabs are scored and matched but not rendered. It can queue for minutes or be down. Garment photos on their own work best.
+- Local model results depend on photo quality. Wrong tags can be fixed on the wardrobe card.
+- Colour-season analysis is not built yet.
+- The mobile app type-checks but has not been tested on a device yet; web is the main target.
 
-### 2. **Get Outfit Ideas** ✨
-- From Home screen, tap "Get Outfit Ideas"
-- Select occasion and cultural context in the modal
-- If wardrobe is empty, either:
-  - Add real clothing items, OR
-  - Try demo with sample outfits
-- View AI-generated suggestions with color harmony and styling tips
+## Contributing
 
-### 3. **Check Your Wardrobe** 👗
-- View all saved items in 2-column grid
-- Long-press to delete items
-- Add button to quickly add more clothing
+Fork, create a feature branch, commit, push and open a pull request.
 
-### 4. **Analyze Colors** 🎨
-- Input hex color codes
-- Use preset cultural palettes (Hari Raya, CNY, Deepavali, etc.)
-- Get compatibility scores and suggestions
+## License
 
-### 5. **Virtual Try-On** 🪞
-- Upload your full-body photo
-- Select garments from wardrobe
-- See how they look on you
-- Get fit notes and styling suggestions
+MIT
 
 ---
 
-## 🎨 Retro UI Design System
-
-### Color Palette
-- **Base Background**: `#1a1a2e` (Charcoal)
-- **Header Background**: `#2d1b4e` (Purple)
-- **Card Background**: `#2a2247` (Medium Purple)
-- **Primary Action**: `#2244d4` (Cobalt Blue)
-- **Text Accent**: `#b5c5ff` (Bright Indigo)
-- **Highlight**: `#fbbf24` (Amber Gold)
-- **Primary Text**: `#f8fafc` (Off-white)
-
-### Typography
-- **Headers/Titles**: Font weight 900 (very heavy)
-- **Body text**: Font weight 600-700
-- **Font family**: Georgia for brand text, system font for UI
-
-### Geometry
-- **Border Radius**: 0 everywhere (hard square corners)
-- **Border Width**: 2-3px (bold, prominent)
-- **Active States**: Cobalt background with amber border
-
-### Components
-- Action buttons: Cobalt (#2244d4) with amber border
-- Secondary buttons: Transparent with cobalt border
-- Cards: Medium purple (#2a2247) with cobalt borders
-- Tab bar: 3px cobalt top border, height 80px
-
----
-
-## 📁 Project Structure
-
-```
-src/
-├── screens/
-│   ├── HomeScreen.tsx          # Landing page with action cards + occasion modal
-│   ├── CameraScreen.tsx        # Photo upload & auto-save to wardrobe
-│   ├── WardrobeScreen.tsx      # Grid view of saved clothing items
-│   ├── OccasionScreen.tsx      # Occasion and cultural context picker
-│   ├── SuggestionScreen.tsx    # AI outfit suggestions + empty state with actions
-│   ├── ColourScreen.tsx        # Color analysis and harmony checker
-│   └── TryOnScreen.tsx         # Virtual try-on interface
-├── navigation/
-│   └── AppNavigator.tsx        # Bottom tab navigation with 4 tabs
-├── services/
-│   └── api.ts                  # Axios API client with all endpoints
-├── constants/
-│   └── config.ts               # API config, occasions, cultural contexts
-├── mocks/
-│   ├── react-native-image-picker.web.ts
-│   └── react-native-reanimated.web.ts
-└── App.tsx / main.tsx
-```
-
----
-
-## 🔌 API Endpoints
-
-### Analyze
-- `POST /api/analyze/clothing` - Analyze a clothing item
-- `POST /api/analyze/colours` - Analyze color compatibility
-
-### Suggest
-- `POST /api/suggest/outfits` - Get outfit suggestions for occasion
-
-### Wardrobe
-- `GET /api/wardrobe` - Fetch all wardrobe items
-- `POST /api/wardrobe` - Add item to wardrobe
-- `DELETE /api/wardrobe/:id` - Remove item from wardrobe
-
-### Virtual Try-On
-- `POST /api/tryon/preview` - Generate try-on preview
-
----
-
-## 💾 Data Persistence
-
-- **Wardrobe items** stored in `backend/wardrobe.json` (persists across restarts)
-- **Uploads** stored in `backend/uploads/` (if configured)
-- Frontend uses in-memory state + API calls
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## 🙌 Acknowledgments
-
-- **Gemini API or local Ollama** for AI clothing analysis and outfit suggestions
-- **Hugging Face** for the IDM-VTON virtual try-on model
-- **React Native** community for cross-platform components
-- Inspired by 90s fashion and Cher Horowitz's iconic closet scene
-
----
-
-## 📞 Support
-
-For issues or questions:
-1. Check existing GitHub issues
-2. Create a new issue with details
-3. Include screenshots if applicable
-
----
-
-**Made with ❤️ by Mardhiah Najwa**
-
-*Dress me. 👗✨*
+Made with ❤️ by Mardhiah Najwa

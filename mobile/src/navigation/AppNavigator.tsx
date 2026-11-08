@@ -1,110 +1,65 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet } from 'react-native';
 
-import { HomeScreen } from '../screens/HomeScreen';
-import { CameraScreen } from '../screens/CameraScreen';
 import { WardrobeScreen } from '../screens/WardrobeScreen';
-import { OccasionScreen } from '../screens/OccasionScreen';
-import { SuggestionScreen } from '../screens/SuggestionScreen';
-import { ColourScreen } from '../screens/ColourScreen';
+import { StudioScreen } from '../screens/StudioScreen';
 import { TryOnScreen } from '../screens/TryOnScreen';
-
-export type RootStackParamList = {
-  Main: undefined;
-  Camera: undefined;
-  Suggestion: { occasion: string; culturalContext: string };
-  Colour: undefined;
-  TryOn: undefined;
-};
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { ColourScreen } from '../screens/ColourScreen';
+import { colors } from '../theme';
 
 export type TabParamList = {
-  Home: undefined;
   Wardrobe: undefined;
-  Occasion: undefined;
+  Studio: undefined;
   TryOn: undefined;
+  Profile: undefined;
+  Colours: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
-const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const TabIcon = ({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) => (
-  <View style={styles.tabIcon}>
-    <Text style={styles.tabEmoji}>{emoji}</Text>
-    <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
-  </View>
+const theme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.bg } };
+
+const ICONS: Record<keyof TabParamList, string[]> = {
+  Wardrobe: ['M12 4a2 2 0 0 1 2 2c0 1-1 1.5-2 2v1', 'm3 18 9-7 9 7a1 1 0 0 1-.6 1.8H3.6A1 1 0 0 1 3 18Z'],
+  Studio: ['M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3Z', 'M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7L19 15Z'],
+  TryOn: ['M8.5 4 3 7l2 4 2-1v10h10V10l2 1 2-4-5.5-3a3.5 3.5 0 0 1-7 0Z'],
+  Profile: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 21a8 8 0 0 1 16 0'],
+  Colours: ['M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.5-1.9-.3-1 .4-2.1 1.5-2.1H17a4 4 0 0 0 4-4c0-5-4-10-9-10Z'],
+};
+
+const icon = (name: keyof TabParamList) => ({ color }: { color: string }) => (
+  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    {ICONS[name].map((d) => <Path key={d} d={d} />)}
+  </Svg>
 );
-
-function MainTabs() {
-  return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false,
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Home" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="Wardrobe"
-        component={WardrobeScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👗" label="Wardrobe" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="Occasion"
-        component={OccasionScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="✨" label="Occasions" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="TryOn"
-        component={TryOnScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🪞" label="Try-On" focused={focused} />,
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
 
 export function AppNavigator() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="Camera" component={CameraScreen} />
-        <Stack.Screen name="Suggestion" component={SuggestionScreen} />
-        <Stack.Screen name="Colour" component={ColourScreen} />
-        <Stack.Screen name="TryOn" component={TryOnScreen} />
-      </Stack.Navigator>
+    <NavigationContainer theme={theme}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.accentStrong,
+          tabBarInactiveTintColor: colors.muted,
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.label,
+        }}
+      >
+        <Tab.Screen name="Wardrobe" component={WardrobeScreen} options={{ tabBarIcon: icon('Wardrobe') }} />
+        <Tab.Screen name="Studio" component={StudioScreen} options={{ tabBarIcon: icon('Studio'), tabBarLabel: 'Studio' }} />
+        <Tab.Screen name="TryOn" component={TryOnScreen} options={{ tabBarIcon: icon('TryOn'), tabBarLabel: 'Try on' }} />
+        <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: icon('Profile') }} />
+        <Tab.Screen name="Colours" component={ColourScreen} options={{ tabBarIcon: icon('Colours'), tabBarLabel: 'Colours' }} />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#0b1220',
-    borderTopColor: '#2b3a55',
-    height: 76,
-    paddingBottom: 10,
-    paddingTop: 4,
-  },
-  tabIcon: {
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  tabEmoji: { fontSize: 20 },
-  tabLabel: { fontSize: 10, color: '#94a3b8', marginTop: 2, letterSpacing: 0.5 },
-  tabLabelActive: { color: '#f59e0b', fontWeight: '800' },
+  tabBar: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 68, paddingTop: 8, paddingBottom: 10 },
+  label: { fontSize: 11, fontWeight: '600' },
 });

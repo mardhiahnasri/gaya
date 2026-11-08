@@ -1,211 +1,132 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  TextInput,
-  Alert,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { analyseColours } from '../services/api';
 import type { ColourAnalysis } from '../services/api';
+import { Busy, Button, Card, Chip, Label, Notice, ScorePill, layout } from '../components/ui';
+import { colors, radius, type } from '../theme';
 
-const PRESET_PALETTES = [
+const PRESETS = [
   { name: 'Hari Raya', colours: ['#006400', '#FFD700', '#FFFFFF'] },
   { name: 'Chinese New Year', colours: ['#CC0000', '#FFD700', '#FF6600'] },
   { name: 'Deepavali', colours: ['#800080', '#FF8C00', '#FFD700'] },
-  { name: 'Royal Blue', colours: ['#003087', '#C0C0C0', '#FFFFFF'] },
-  { name: 'Earth Tones', colours: ['#8B4513', '#D2B48C', '#F5F5DC'] },
+  { name: 'Royal blue', colours: ['#003087', '#C0C0C0', '#FFFFFF'] },
+  { name: 'Earth tones', colours: ['#8B4513', '#D2B48C', '#F5F5DC'] },
 ];
 
+const HEX = /^#[0-9A-F]{6}$/i;
+
 export function ColourScreen() {
-  const navigation = useNavigation();
-  const [colours, setColours] = useState<string[]>(['#E94560', '#1A1A2E']);
-  const [inputValue, setInputValue] = useState('');
-  const [analysis, setAnalysis] = useState<ColourAnalysis | null>(null);
+  const [palette, setPalette] = useState<string[]>(['#C7A88C', '#8E7A69']);
+  const [input, setInput] = useState('');
+  const [result, setResult] = useState<ColourAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const addColour = () => {
-    const hex = inputValue.trim().toUpperCase();
-    if (!/^#[0-9A-F]{6}$/i.test(hex)) {
-      Alert.alert('Invalid Hex', 'Enter a valid hex colour e.g. #FF5733');
-      return;
-    }
-    if (colours.includes(hex)) return;
-    setColours((prev) => [...prev, hex]);
-    setInputValue('');
-    setAnalysis(null);
+  const update = (next: string[]) => {
+    setPalette(next);
+    setResult(null);
+    setError(null);
   };
 
-  const removeColour = (hex: string) => {
-    setColours((prev) => prev.filter((c) => c !== hex));
-    setAnalysis(null);
-  };
-
-  const handleAnalyse = async () => {
-    if (colours.length < 2) {
-      Alert.alert('Add more colours', 'Add at least 2 colours to analyse.');
+  const add = (hex: string) => {
+    const value = (hex.startsWith('#') ? hex : `#${hex}`).toUpperCase();
+    if (!HEX.test(value)) {
+      setError('Enter a valid hex colour, e.g. #B5654A');
       return;
     }
+    if (!palette.includes(value)) update([...palette, value]);
+    setInput('');
+  };
+
+  const analyse = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const result = await analyseColours(colours);
-      setAnalysis(result);
+      setResult(await analyseColours(palette));
     } catch {
-      Alert.alert('Error', 'Could not analyse colours. Make sure the backend is running.');
+      setError('Could not analyse these colours. Check that the AI model is running.');
     } finally {
       setLoading(false);
     }
   };
 
-  const applyPreset = (palette: typeof PRESET_PALETTES[0]) => {
-    setColours(palette.colours);
-    setAnalysis(null);
-  };
-
   return (
-    <View style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Colour Check</Text>
-        <View style={{ width: 60 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Current palette */}
-        <View style={styles.palettePreview}>
-          {colours.map((hex) => (
-            <TouchableOpacity key={hex} onPress={() => removeColour(hex)} style={styles.swatchWrap}>
-              <View style={[styles.swatch, { backgroundColor: hex }]} />
-              <Text style={styles.swatchHex}>{hex}</Text>
-              <Text style={styles.swatchRemove}>✕</Text>
-            </TouchableOpacity>
-          ))}
+    <SafeAreaView style={layout.screen} edges={['top']}>
+      <ScrollView contentContainerStyle={layout.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <View>
+          <Text style={type.h1}>Colour check</Text>
+          <Text style={type.small}>See how well colours pair before you wear them.</Text>
         </View>
 
-        {/* Add colour input */}
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={inputValue}
-            onChangeText={setInputValue}
-            placeholder="#FF5733"
-            placeholderTextColor="#555"
-            autoCapitalize="characters"
-            maxLength={7}
-          />
-          <TouchableOpacity style={styles.addBtn} onPress={addColour}>
-            <Text style={styles.addBtnText}>Add</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Preset palettes */}
-        <Text style={styles.sectionHeader}>Cultural Presets</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetScroll}>
-          {PRESET_PALETTES.map((palette) => (
-            <TouchableOpacity key={palette.name} style={styles.presetCard} onPress={() => applyPreset(palette)}>
-              <View style={styles.presetSwatches}>
-                {palette.colours.map((hex) => (
-                  <View key={hex} style={[styles.presetSwatch, { backgroundColor: hex }]} />
-                ))}
-              </View>
-              <Text style={styles.presetName}>{palette.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Analyse button */}
-        <TouchableOpacity style={styles.analyzeBtn} onPress={handleAnalyse} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.analyzeBtnText}>✦ Check Compatibility</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Analysis result */}
-        {analysis && (
-          <View style={styles.result}>
-            <View style={styles.resultHeader}>
-              <Text style={styles.harmonyType}>{analysis.harmonyType}</Text>
-              <View style={styles.scoreBadge}>
-                <Text style={styles.scoreText}>{analysis.score}/10</Text>
-              </View>
-            </View>
-
-            <Text style={styles.verdict}>{analysis.verdict}</Text>
-
-            <Text style={styles.sectionHeader}>Cultural Notes</Text>
-            <Text style={styles.bodyText}>{analysis.culturalNotes}</Text>
-
-            {analysis.suggestedAccents.length > 0 && (
-              <>
-                <Text style={styles.sectionHeader}>Suggested Accents</Text>
-                <View style={styles.accentRow}>
-                  {analysis.suggestedAccents.map((hex) => (
-                    <View key={hex} style={styles.accentChip}>
-                      <View style={[styles.accentSwatch, { backgroundColor: hex }]} />
-                      <Text style={styles.accentHex}>{hex}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
+        <Card>
+          <Label>Your palette</Label>
+          <View style={s.bar}>
+            {palette.map((c) => <View key={c} style={{ flex: 1, backgroundColor: c }} />)}
           </View>
+          <View style={layout.row}>
+            {palette.map((c) => (
+              <TouchableOpacity key={c} activeOpacity={0.8} onPress={() => update(palette.filter((x) => x !== c))} style={s.colourChip}>
+                <View style={[s.dot, { backgroundColor: c }]} />
+                <Text style={{ fontSize: 14, color: colors.text }}>{c} ✕</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={layout.row}>
+            <TextInput
+              style={s.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="#4F6B4A"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={7}
+              onSubmitEditing={() => add(input)}
+            />
+            <Button title="Add colour" onPress={() => add(input)} />
+          </View>
+          <View>
+            <Label>Presets</Label>
+            <View style={layout.row}>
+              {PRESETS.map((p) => <Chip key={p.name} label={p.name} onPress={() => update(p.colours)} />)}
+            </View>
+          </View>
+          {error && <Notice tone="error">{error}</Notice>}
+          {loading ? <Busy message="Analysing colours" /> : <Button title="Analyse palette" variant="primary" disabled={palette.length < 2} onPress={analyse} />}
+        </Card>
+
+        {result && (
+          <Card>
+            <View style={layout.row}>
+              <ScorePill big score={result.score} suffix="/10" tone={result.score >= 8 ? 'pass' : result.score >= 5 ? 'warn' : 'fail'} />
+              <View style={s.tag}><Text style={{ color: colors.accentStrong, fontSize: 12, fontWeight: '600' }}>{result.harmonyType}</Text></View>
+            </View>
+            <Text style={type.body}>{result.verdict}</Text>
+            <View>
+              <Label>Cultural notes</Label>
+              <Text style={type.small}>{result.culturalNotes}</Text>
+            </View>
+            {result.suggestedAccents?.length > 0 && (
+              <View>
+                <Label>Suggested accents</Label>
+                <View style={layout.row}>
+                  {result.suggestedAccents.map((c) => <Chip key={c} label={`+ ${c}`} onPress={() => add(c)} />)}
+                </View>
+              </View>
+            )}
+          </Card>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0e17' },
-  topBar: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingTop: 56, paddingHorizontal: 20, paddingBottom: 16,
-  },
-  backBtn: { width: 60 },
-  backText: { color: '#e94560', fontSize: 18 },
-  title: { flex: 1, textAlign: 'center', color: '#fff', fontSize: 18, fontWeight: '700' },
-  scroll: { padding: 20, paddingBottom: 60 },
-  palettePreview: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  swatchWrap: { alignItems: 'center', gap: 4 },
-  swatch: { width: 56, height: 56, borderRadius: 12, borderWidth: 2, borderColor: '#fff2' },
-  swatchHex: { fontSize: 9, color: '#aaa' },
-  swatchRemove: { fontSize: 10, color: '#e94560' },
-  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  input: {
-    flex: 1, backgroundColor: '#1a1a2e', borderRadius: 12, color: '#fff',
-    paddingHorizontal: 16, paddingVertical: 12, fontSize: 14,
-    borderWidth: 1, borderColor: '#16213e',
-  },
-  addBtn: { backgroundColor: '#e94560', borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center' },
-  addBtnText: { color: '#fff', fontWeight: '700' },
-  sectionHeader: { fontSize: 10, color: '#e94560', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10, marginTop: 4 },
-  presetScroll: { marginBottom: 20 },
-  presetCard: {
-    backgroundColor: '#1a1a2e', borderRadius: 14, padding: 10,
-    marginRight: 10, alignItems: 'center', borderWidth: 1, borderColor: '#16213e', width: 100,
-  },
-  presetSwatches: { flexDirection: 'row', gap: 4, marginBottom: 6 },
-  presetSwatch: { width: 22, height: 22, borderRadius: 11 },
-  presetName: { fontSize: 10, color: '#ccc', textAlign: 'center' },
-  analyzeBtn: { backgroundColor: '#e94560', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 20 },
-  analyzeBtnText: { color: '#fff', fontWeight: '800', fontSize: 15, letterSpacing: 1 },
-  result: { backgroundColor: '#1a1a2e', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#16213e' },
-  resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  harmonyType: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  scoreBadge: { backgroundColor: '#e94560', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  scoreText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  verdict: { color: '#ccc', fontSize: 14, lineHeight: 20, marginBottom: 8 },
-  bodyText: { color: '#ccc', fontSize: 13, lineHeight: 20 },
-  accentRow: { flexDirection: 'row', gap: 12 },
-  accentChip: { alignItems: 'center', gap: 4 },
-  accentSwatch: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#fff2' },
-  accentHex: { fontSize: 10, color: '#aaa' },
+const s = StyleSheet.create({
+  bar: { flexDirection: 'row', height: 80, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  colourChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)' },
+  input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 11, fontSize: 14, color: colors.text },
+  tag: { backgroundColor: colors.accentSoft, borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 10 },
 });

@@ -35,6 +35,7 @@ export function ImageDrop({ value, onChange, onError, label, hint, maxSize }: Pr
         <img src={value.dataUrl} alt={label} />
       ) : (
         <>
+          <svg className="drop-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V5m0 0-4 4m4-4 4 4M5 19h14" /></svg>
           <strong>{label}</strong>
           <span className="small">{hint ?? 'Drop an image here or click to browse'}</span>
         </>

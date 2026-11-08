@@ -12,7 +12,7 @@ const PRESETS = [
 
 export function ColoursPage() {
   const [colours, setColours] = useState<string[]>(['#C7A88C', '#8E7A69']);
-  const [picker, setPicker] = useState('#B5654A');
+  const [picker, setPicker] = useState('#4F6B4A');
   const [result, setResult] = useState<ColourAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,12 +49,12 @@ export function ColoursPage() {
             </div>
             <div className="chips" style={{ marginTop: 12 }}>
               {colours.map((c) => (
-                <button key={c} className="chip" onClick={() => update(colours.filter((x) => x !== c))} title="Remove">{c} ✕</button>
+                <button key={c} className="chip" onClick={() => update(colours.filter((x) => x !== c))} title="Remove"><span className="colour-dot" style={{ background: c }} />{c} ✕</button>
               ))}
             </div>
           </div>
-          <div className="row">
-            <input type="color" value={picker} onChange={(e) => setPicker(e.target.value)} style={{ width: 48, height: 40, border: 0, background: 'none' }} />
+          <div className="colour-pick">
+            <input type="color" value={picker} aria-label="Pick a colour" onChange={(e) => setPicker(e.target.value)} />
             <button className="btn" disabled={colours.includes(picker.toUpperCase())} onClick={() => update([...colours, picker.toUpperCase()])}>Add colour</button>
           </div>
           <div>
@@ -84,7 +84,7 @@ export function ColoursPage() {
                   <div className="row">
                     {result.suggestedAccents.map((c) => (
                       <button key={c} className="chip" onClick={() => update([...colours, c.toUpperCase()])}>
-                        <span className="swatch" style={{ background: c, display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }} />{c}
+                        <span className="colour-dot" style={{ background: c }} />{c}
                       </button>
                     ))}
                   </div>

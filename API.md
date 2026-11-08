@@ -453,3 +453,20 @@ All endpoints take `profile`: `hijab` | `modest` | `none`, and `occasion`: an id
 - `POST /api/outfits/render` `{ personImage: { base64, mimeType }, itemIds }` renders the outfit on a body photo by chaining try-on passes (dress or top, then outerwear). Bottoms and hijabs are not rendered by the free model and come back as warnings.
 - `POST /api/outfits/review` `{ image: { base64, mimeType }, itemIds, occasion, profile }` returns a stylist review `{ score, verdict, strengths, issues, swaps }` from the vision model.
 - `PATCH /api/wardrobe/:id` corrects detected fields such as `category`, `sleeves`, `length`, `fit`.
+
+## Profile, images and try-on from any image
+
+Photos are stored in S3 and returned as relative URLs like `/api/images/<id>`.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/profile` | Body photo URL, height, weight, top/bottom/shoe size, body shape, age group, gender, modesty (`none`/`modest`/`hijab`), region, budget, colour season |
+| `PUT /api/profile` | Partial update. `bodyPhoto`: data URL to replace the photo, `null` to remove it |
+| `GET /api/images/:id` | Serves a stored image |
+| `POST /api/tryon/from-image` | Body: `{ sourceImage?: {base64, mimeType}, sourceUrl?, category: 'top'｜'dress'｜'outerwear' }`. Tries any outfit image on the saved body photo. `sourceUrl` may be a direct image link or a page (e.g. a Pinterest pin, its `og:image` is used). Private addresses are rejected |
+| `POST /api/tryon/review` | Body: `{ image, occasion?, tryonId? }`. Stylist review that considers the profile |
+
+Changes to existing endpoints:
+- `POST /api/outfits/render`: `personImage` is optional and defaults to the saved body photo. The response adds `tryonId` and `resultImageUrl`.
+- `POST /api/outfits/match|score|review`: the saved profile (modesty, sizes, demographics) is used. An explicit `profile` in the body still overrides modesty. Items whose `size` differs from the profile get a "Sizing" warning.
+- `PATCH /api/wardrobe/:id` also accepts `size`.

@@ -1,154 +1,204 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { getWardrobe, deleteFromWardrobe } from '../services/api';
-import type { WardrobeItem } from '../services/api';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Alert, FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+import { analyzeClothing, deleteFromWardrobe, getWardrobe, saveToWardrobe, updateWardrobeItem } from '../services/api';
+import type { Category, WardrobeItem } from '../services/api';
+import { pickImage, type PickedImage } from '../lib/image';
+import { CATEGORIES, categoryOf } from '../lib/outfit';
+import { Busy, Button, Card, Chip, Notice, Select, layout } from '../components/ui';
+import { colors, radius, shadow, type } from '../theme';
+
+const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
 
 export function WardrobeScreen() {
-  const navigation = useNavigation<Nav>();
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('');
+  const [category, setCategory] = useState<'all' | Category>('all');
+  const [adding, setAdding] = useState(false);
+  const [photo, setPhoto] = useState<PickedImage | null>(null);
+  const [analysing, setAnalysing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadWardrobe = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async () => {
     try {
-      const data = await getWardrobe();
-      setItems(data);
+      setItems(await getWardrobe());
+      setError(null);
     } catch {
-      Alert.alert('Error', 'Could not load wardrobe. Is the backend running?');
+      setError('Could not load your wardrobe. Is the backend running?');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(loadWardrobe);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
-  const handleDelete = (id: string) => {
-    Alert.alert('Remove Item', 'Remove this item from your wardrobe?', [
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    items.forEach((i) => m.set(categoryOf(i), (m.get(categoryOf(i)) ?? 0) + 1));
+    return m;
+  }, [items]);
+
+  const visible = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return items.filter((i) => {
+      if (category !== 'all' && categoryOf(i) !== category) return false;
+      if (!q) return true;
+      return [i.type, i.culturalOrigin, i.style, ...(i.colourNames ?? [])].some((v) => v?.toLowerCase().includes(q));
+    });
+  }, [items, filter, category]);
+
+  const pick = async (source: 'camera' | 'gallery') => {
+    const img = await pickImage(source, 768);
+    if (img) {
+      setPhoto(img);
+      setError(null);
+    }
+  };
+
+  const addItem = async () => {
+    if (!photo) return;
+    setAnalysing(true);
+    setError(null);
+    try {
+      const analysis = await analyzeClothing(photo.base64, photo.mimeType);
+      // The data URL is saved so the studio can send the garment image to the try-on service.
+      const saved = await saveToWardrobe(analysis, photo.dataUrl);
+      setItems((prev) => [...prev, saved]);
+      setPhoto(null);
+      setAdding(false);
+    } catch {
+      setError('Could not analyse that photo. Check that the AI model is running, then try again.');
+    } finally {
+      setAnalysing(false);
+    }
+  };
+
+  const changeCategory = async (item: WardrobeItem, category: Category) => {
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, category } : i)));
+    try {
+      await updateWardrobeItem(item.id, { category });
+    } catch {
+      setError('Could not update the category.');
+      load();
+    }
+  };
+
+  const remove = (item: WardrobeItem) => {
+    Alert.alert('Remove item', `Remove ${item.type} from your wardrobe?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',
         style: 'destructive',
         onPress: async () => {
-          await deleteFromWardrobe(id);
-          setItems((prev) => prev.filter((i) => i.id !== id));
+          await deleteFromWardrobe(item.id);
+          setItems((prev) => prev.filter((i) => i.id !== item.id));
         },
       },
     ]);
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.glow} />
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.kicker}>CURATED</Text>
-          <Text style={styles.title}>Wardrobe Archive</Text>
+  const header = (
+    <View style={{ gap: 16, marginBottom: 4 }}>
+      <View style={layout.rowBetween}>
+        <View style={{ flex: 1 }}>
+          <Text style={type.h1}>Wardrobe</Text>
+          <Text style={type.small}>
+            {items.length} {items.length === 1 ? 'piece' : 'pieces'} in your collection
+          </Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('Camera')}>
-          <Text style={styles.addBtnText}>+ Add Look</Text>
-        </TouchableOpacity>
+        <Button title={adding ? 'Close' : '+ Add'} variant="primary" onPress={() => setAdding((v) => !v)} />
       </View>
 
-      {!loading && items.length > 0 && (
-        <Text style={styles.stats}>{items.length} pieces catalogued</Text>
+      {error && <Notice tone="error">{error}</Notice>}
+
+      {adding && (
+        <Card>
+          <View style={s.preview}>
+            {photo ? <Image source={{ uri: photo.dataUrl }} style={s.previewImg} resizeMode="contain" /> : <Text style={type.small}>Add a clear photo of one item</Text>}
+          </View>
+          <View style={layout.row}>
+            <Button title="Camera" onPress={() => pick('camera')} style={{ flex: 1 }} />
+            <Button title="Gallery" onPress={() => pick('gallery')} style={{ flex: 1 }} />
+          </View>
+          <Text style={type.small}>Type, colours, fabric, sleeves, length and occasions are detected automatically.</Text>
+          {analysing ? <Busy message="Analysing your item" /> : <Button title="Analyse and save" variant="primary" disabled={!photo} onPress={addItem} />}
+        </Card>
       )}
 
-      {loading ? (
-        <ActivityIndicator color="#f59e0b" style={{ marginTop: 60 }} />
-      ) : items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>👕</Text>
-          <Text style={styles.emptyText}>No pieces yet</Text>
-          <Text style={styles.emptySub}>Tap Add Look to start building your Cher-style digital closet</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onLongPress={() => handleDelete(item.id)}>
-              {item.imageUri ? (
-                <Image source={{ uri: item.imageUri }} style={styles.cardImage} resizeMode="cover" />
-              ) : (
-                <View style={styles.cardImagePlaceholder}>
-                  <Text style={{ fontSize: 32 }}>👗</Text>
+      <TextInput style={s.search} placeholder="Search type, colour, culture…" placeholderTextColor={colors.muted} value={filter} onChangeText={setFilter} />
+
+      {items.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {(['all', ...CATEGORIES] as const).filter((c) => c === 'all' || counts.has(c)).map((c) => (
+            <Chip key={c} active={category === c} onPress={() => setCategory(c)} label={`${c === 'all' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)}  ${c === 'all' ? items.length : counts.get(c)}`} />
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={layout.screen} edges={['top']}>
+      <FlatList
+        data={visible}
+        keyExtractor={(i) => i.id}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 12 }}
+        contentContainerStyle={[layout.content, { gap: 12 }]}
+        ListHeaderComponent={header}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          loading ? (
+            <Busy message="Loading wardrobe" />
+          ) : (
+            <View style={s.empty}>
+              <Text style={type.h3}>{items.length === 0 ? 'Your wardrobe is empty' : 'No matches'}</Text>
+              <Text style={type.small}>{items.length === 0 ? 'Add your first piece to start matching outfits.' : 'Try a different search.'}</Text>
+            </View>
+          )
+        }
+        renderItem={({ item }) => (
+          <View style={s.item}>
+            <View style={s.itemImg}>
+              {item.imageUri ? <Image source={{ uri: item.imageUri }} style={s.itemPhoto} resizeMode="cover" /> : <Text style={{ fontSize: 32 }}>👗</Text>}
+              {!!item.dominantColours?.length && (
+                <View style={s.swatches}>
+                  {item.dominantColours.map((c, i) => <View key={i} style={[s.swatch, { backgroundColor: c }]} />)}
                 </View>
               )}
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>{item.type}</Text>
-                <View style={styles.swatchRow}>
-                  {item.dominantColours.slice(0, 3).map((hex) => (
-                    <View key={hex} style={[styles.swatch, { backgroundColor: hex }]} />
-                  ))}
-                </View>
-                <Text style={styles.cardOrigin}>{item.culturalOrigin} / {item.style}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      )}
-      <Text style={styles.hint}>Long press a card to remove</Text>
-    </View>
+            </View>
+            <View style={{ padding: 12, gap: 6 }}>
+              <Text style={[type.h3, { textTransform: 'capitalize', fontSize: 15 }]} numberOfLines={1}>{item.type}</Text>
+              <Text style={type.small} numberOfLines={1}>
+                {[item.style, item.culturalOrigin].filter(Boolean).join(' · ')}
+              </Text>
+              <Select compact value={categoryOf(item)} options={CATEGORY_OPTIONS} onChange={(c) => changeCategory(item, c)} />
+              <TouchableOpacity onPress={() => remove(item)} style={{ alignSelf: 'flex-end' }}>
+                <Text style={[type.small, { color: colors.muted }]}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0b1220' },
-  glow: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: '#0ea5e9',
-    top: -90,
-    right: -70,
-    opacity: 0.22,
-  },
-  topBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: 56, paddingHorizontal: 20, paddingBottom: 16,
-  },
-  kicker: { color: '#f59e0b', fontSize: 10, letterSpacing: 3, marginBottom: 4 },
-  title: { fontSize: 24, fontWeight: '800', color: '#f8fafc', fontFamily: 'Georgia' },
-  addBtn: { backgroundColor: '#f59e0b', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
-  addBtnText: { color: '#0b1220', fontWeight: '800', fontSize: 12, letterSpacing: 0.8 },
-  stats: { color: '#93c5fd', fontSize: 12, paddingHorizontal: 20, marginBottom: 12 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyEmoji: { fontSize: 56, marginBottom: 16 },
-  emptyText: { fontSize: 18, color: '#f8fafc', fontWeight: '700' },
-  emptySub: { fontSize: 13, color: '#cbd5e1', marginTop: 6, textAlign: 'center', paddingHorizontal: 40 },
-  list: { padding: 12, paddingBottom: 40 },
-  row: { gap: 12, marginBottom: 12 },
-  card: {
-    flex: 1, backgroundColor: '#111b31', borderRadius: 18, overflow: 'hidden',
-    borderWidth: 1, borderColor: '#2b3a55',
-  },
-  cardImage: { width: '100%', height: 140 },
-  cardImagePlaceholder: {
-    width: '100%', height: 140, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#1e293b',
-  },
-  cardBody: { padding: 10 },
-  cardTitle: { color: '#f8fafc', fontWeight: '700', fontSize: 13, marginBottom: 6 },
-  swatchRow: { flexDirection: 'row', gap: 4, marginBottom: 4 },
-  swatch: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: '#fff2' },
-  cardOrigin: { fontSize: 11, color: '#fbbf24' },
-  hint: { textAlign: 'center', color: '#64748b', fontSize: 11, paddingBottom: 10 },
+const s = StyleSheet.create({
+  search: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, backgroundColor: colors.surface, paddingHorizontal: 18, paddingVertical: 11, fontSize: 14, color: colors.text },
+  preview: { height: 200, borderRadius: radius.md, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.borderStrong, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  previewImg: { width: '100%', height: '100%' },
+  item: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', ...shadow },
+  itemImg: { aspectRatio: 4 / 5, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  itemPhoto: { width: '100%', height: '100%' },
+  swatches: { position: 'absolute', left: 8, bottom: 8, flexDirection: 'row', gap: 4, paddingVertical: 4, paddingHorizontal: 6, borderRadius: radius.pill, backgroundColor: 'rgba(255,253,248,0.92)' },
+  swatch: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: 'rgba(0,0,0,0.12)' },
+  empty: { alignItems: 'center', paddingVertical: 48, gap: 6 },
 });

@@ -1,0 +1,48 @@
+version: "3.9"
+
+# Gaya database (PostgreSQL). Run separately from the main stack:
+#   cd database && cp .env.example .env && docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gaya-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - gaya_pgdata:/var/lib/postgresql/data
+      # Runs once, on first start of an empty volume.
+      - ./init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # S3-compatible storage for images (body photos, closet items, try-on results).
+  localstack:
+    image: localstack/localstack:3
+    container_name: gaya-localstack
+    environment:
+      - SERVICES=s3
+      - S3_BUCKET=${S3_BUCKET}
+    ports:
+      - "${LOCALSTACK_PORT}:4566"
+    volumes:
+      - gaya_localstack:/var/lib/localstack
+      # Scripts here run once LocalStack is ready (creates the bucket).
+      - ./localstack/init:/etc/localstack/init/ready.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gaya_pgdata:
+  gaya_localstack:

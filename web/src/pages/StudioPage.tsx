@@ -5,9 +5,6 @@ import {
   type Category, type MatchedOutfit, type OutfitRender, type OutfitReview, type OutfitScore,
   type StyleProfile, type WardrobeItem,
 } from '../services/api';
-import type { PickedImage } from '../lib/image';
-import { useStored } from '../lib/storage';
-import { ImageDrop } from '../components/ImageDrop';
 import { Busy } from '../components/Busy';
 
 const SECTIONS: { id: Category; label: string }[] = [
@@ -52,16 +49,17 @@ function scoreTone(score: number) {
 
 interface Props {
   profile: StyleProfile;
+  hasBody: boolean;
+  onNeedProfile: () => void;
 }
 
-export function StudioPage({ profile }: Props) {
+export function StudioPage({ profile, hasBody, onNeedProfile }: Props) {
   const [wardrobe, setWardrobe] = useState<WardrobeItem[] | null>(null);
   const [occasion, setOccasion] = useState('casual');
   const [selected, setSelected] = useState<string[]>([]);
   const [matches, setMatches] = useState<MatchedOutfit[] | null>(null);
   const [matching, setMatching] = useState(false);
   const [rules, setRules] = useState<OutfitScore | null>(null);
-  const [body, setBody] = useStored<PickedImage | null>('gaya.body', null);
   const [rendering, setRendering] = useState(false);
   const [render, setRender] = useState<OutfitRender | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -106,14 +104,14 @@ export function StudioPage({ profile }: Props) {
   };
 
   const tryOn = async () => {
-    if (!body || selected.length === 0) return;
+    if (!hasBody || selected.length === 0) return;
     const id = ++runId.current;
     setRendering(true);
     setError(null);
     setRender(null);
     setReview(null);
     try {
-      const result = await renderOutfit({ base64: body.base64, mimeType: body.mimeType }, selected);
+      const result = await renderOutfit(selected, occasion);
       if (id !== runId.current) return;
       setRender(result);
       if (result.status !== 'ready' || !result.previewImageBase64) {
@@ -123,7 +121,7 @@ export function StudioPage({ profile }: Props) {
       setRendering(false);
       setReviewing(true);
       try {
-        const r = await reviewOutfit({ base64: result.previewImageBase64, mimeType: 'image/jpeg' }, selected, occasion, profile);
+        const r = await reviewOutfit({ base64: result.previewImageBase64, mimeType: 'image/jpeg' }, selected, occasion, profile, result.tryonId);
         if (id === runId.current) setReview(r);
       } catch {
         if (id === runId.current) setError('The try-on worked, but the stylist review failed. Check that the AI model is running.');
@@ -241,10 +239,11 @@ export function StudioPage({ profile }: Props) {
 
           <div className="card stack">
             <h3 style={{ margin: 0 }}>Try it on</h3>
-            <ImageDrop value={body} onChange={setBody} onError={setError} label="Your full-body photo" hint="Standing, facing the camera, plain background. Saved in this browser." maxSize={1200} />
-            {body && <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setBody(null)}>Remove photo</button>}
+            {!hasBody && (
+              <div className="notice">Add your body photo in your profile to try outfits on. <button className="link" onClick={onNeedProfile}>Go to profile</button></div>
+            )}
             {rendering ? <Busy message="Dressing you in this outfit. This can take a few minutes" /> : (
-              <button className="btn primary" disabled={!body || selected.length === 0 || reviewing} onClick={tryOn}>Try on my body</button>
+              <button className="btn primary" disabled={!hasBody || selected.length === 0 || reviewing} onClick={tryOn}>Try on my body</button>
             )}
             {render?.previewImageBase64 && <img className="result-img" src={`data:image/jpeg;base64,${render.previewImageBase64}`} alt="Try-on result" />}
             {render?.warnings.map((w, i) => <div key={i} className="notice">{w}</div>)}

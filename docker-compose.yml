@@ -18,6 +18,12 @@ services:
       - HF_SPACE_URL=${HF_SPACE_URL:-https://yisol-idm-vton.hf.space}
       - HF_SPACE_API_NAME=${HF_SPACE_API_NAME:-tryon}
       - HF_TOKEN=${HF_TOKEN:-}
+      - DATABASE_URL=${DATABASE_URL}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_BUCKET=${S3_BUCKET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
       - PORT=5050
     volumes:
       - backend_uploads:/app/uploads

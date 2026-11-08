@@ -241,7 +241,23 @@ function checkOccasion(items, occasionId) {
   return check('occasion', 'Occasion fit', 'pass', 'Suits the occasion.');
 }
 
-function scoreOutfit(items, { occasion, profile = 'none', wardrobe = [] } = {}) {
+// Warns when a tagged item size differs from the wearer's saved size for that kind of piece.
+function checkSize(items, wearer) {
+  if (!wearer) return null;
+  const norm = (v) => String(v || '').trim().toLowerCase();
+  const mismatches = [];
+  for (const item of items) {
+    const size = norm(item.size);
+    if (!size) continue;
+    const cat = categoryOf(item);
+    const mine = norm(['bottom'].includes(cat) ? wearer.bottomSize : cat === 'shoes' ? wearer.shoeSize : ['top', 'dress', 'outerwear'].includes(cat) ? wearer.topSize : '');
+    if (mine && mine !== size) mismatches.push(`${item.type} is size ${item.size} (yours: ${mine.toUpperCase()})`);
+  }
+  if (!mismatches.length) return null;
+  return check('size', 'Sizing', 'warn', `${mismatches.join('; ')}. It may not fit as intended.`);
+}
+
+function scoreOutfit(items, { occasion, profile = 'none', wardrobe = [], wearer = null } = {}) {
   const wardrobeHasHijab = wardrobe.some((i) => categoryOf(i) === 'hijab');
   const checks = [
     checkCompleteness(items),
@@ -249,6 +265,7 @@ function scoreOutfit(items, { occasion, profile = 'none', wardrobe = [] } = {}) 
     checkPatterns(items),
     checkModesty(items, profile),
     checkHijab(items, profile, wardrobeHasHijab),
+    checkSize(items, wearer),
     checkOccasion(items, occasion),
   ].filter(Boolean);
 
@@ -259,7 +276,7 @@ function scoreOutfit(items, { occasion, profile = 'none', wardrobe = [] } = {}) 
   return { score, checks };
 }
 
-function matchOutfits(wardrobe, { occasion, profile = 'none', limit = 6 } = {}) {
+function matchOutfits(wardrobe, { occasion, profile = 'none', limit = 6, wearer = null } = {}) {
   const byCat = (cat) => wardrobe.filter((i) => categoryOf(i) === cat);
   const modest = profile === 'hijab' || profile === 'modest';
 
@@ -278,7 +295,7 @@ function matchOutfits(wardrobe, { occasion, profile = 'none', limit = 6 } = {}) 
     for (const outer of outers) {
       for (const hijab of hijabs) {
         const items = [...base, outer, hijab].filter(Boolean);
-        const result = scoreOutfit(items, { occasion, profile, wardrobe });
+        const result = scoreOutfit(items, { occasion, profile, wardrobe, wearer });
         candidates.push({ itemIds: items.map((i) => i.id), ...result });
       }
     }

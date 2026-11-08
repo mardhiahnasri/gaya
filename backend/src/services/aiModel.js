@@ -170,10 +170,11 @@ async function reviewOutfit(base64Image, mimeType, context) {
 
 Pieces: ${context.pieces.join('; ')}
 Occasion: ${context.occasion}
+Wearer: ${context.wearer || 'not specified'}
 ${profileNote}
 Rule-based findings already noted: ${context.findings.join(' | ') || 'none'}
 
-Look at the image and judge: colour harmony, proportions and silhouette, fit, and whether it suits the occasion.
+Look at the image and judge: colour harmony, proportions and silhouette, fit, and whether it suits the occasion and the wearer.
 Note that the image may be an imperfect AI render; ignore rendering artefacts and judge the outfit itself.
 
 Return a JSON object:
